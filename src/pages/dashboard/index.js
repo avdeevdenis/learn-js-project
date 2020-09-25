@@ -25,7 +25,7 @@ export default class Page {
 
   async updateTableComponent (from, to) {
     const data = await fetchJson(`${process.env.BACKEND_URL}api/dashboard/bestsellers?_start=1&_end=20&from=${from.toISOString()}&to=${to.toISOString()}`);
-    this.components.sortableTable.addRows(data);
+    this.components.sortableTable.updateData(data);
   }
 
   async updateChartsComponents (from, to) {

@@ -1,75 +1,110 @@
 class Tooltip {
-  static instance;
-
   element;
 
-  onMouseOver = event => {
-    const element = event.target.closest('[data-tooltip]');
-
-    if (element) {
-      this.render(element.dataset.tooltip);
-      this.moveTooltip(event);
-
-      document.addEventListener('pointermove', this.onMouseMove);
-    }
-  };
-
-  onMouseMove = event => {
-    this.moveTooltip(event);
-  };
-
-  onMouseOut = () => {
-    this.removeTooltip();
-  };
-
-  removeTooltip() {
-    if (this.element) {
-      this.element.remove();
-      this.element = null;
-
-      document.removeEventListener('pointermove', this.onMouseMove);
-    }
-  }
+  tooltipOffset = 10; // отступы в пикселях от курсора мыши до тултипа
 
   constructor() {
-    if (Tooltip.instance) {
-      return Tooltip.instance;
-    }
-
-    Tooltip.instance = this;
+      this.onPointerOver = this.onPointerOver.bind(this);
+      this.onPointerOut = this.onPointerOut.bind(this);
+      this.onPointerMove = this.onPointerMove.bind(this);
   }
 
   initEventListeners() {
-    document.addEventListener('pointerover', this.onMouseOver);
-    document.addEventListener('pointerout', this.onMouseOut);
+      document.addEventListener('pointerover', this.onPointerOver);
+      document.addEventListener('pointerout', this.onPointerOut);
   }
 
-  initialize () {
-    this.initEventListeners();
+  onPointerOver(event) {
+      const tooltipElement = event.target.closest('[data-tooltip]');
+
+      if (!tooltipElement) return;
+
+      document.addEventListener('pointermove', this.onPointerMove);
+
+      const options = this.getTooltipCoords(event.clientX, event.clientY);
+
+      this.render(tooltipElement.dataset.tooltip, options);
   }
 
-  render(html) {
-    this.element = document.createElement('div');
-    this.element.className = 'tooltip';
-    this.element.innerHTML = html;
+  onPointerOut() {
+      document.removeEventListener('pointermove', this.onPointerMove);
 
-    document.body.append(this.element);
+      this.remove();
   }
 
-  moveTooltip(event) {
-    const left = event.clientX + 10;
-    const top = event.clientY + 10;
+  getTooltipCoords(clientX, clientY) {
+      return {
+          left: clientX + this.tooltipOffset + 'px',
+          top: clientY + this.tooltipOffset + 'px'
+      };
+  }
 
-    // TODO: Add logic for window borders
+  onPointerMove(event) {
+      if (!this.element) return;
 
-    this.element.style.left = left + 'px';
-    this.element.style.top = top + 'px';
+      const { left, top } = this.getTooltipCoords(event.clientX, event.clientY);
+
+      this.setTooltipCoords(left, top);
+  }
+
+  setTooltipCoords(left, top) {
+      this.element.style.left = left;
+      this.element.style.top = top;
+  }
+
+  removeEventListener() {
+      document.removeEventListener('pointerover', this.onPointerOver);
+      document.removeEventListener('pointermove', this.onPointerMove);
+      document.removeEventListener('pointerout', this.onPointerOut);
   }
 
   destroy() {
-    document.removeEventListener('pointerover', this.onMouseOver);
-    document.removeEventListener('pointerout', this.onMouseOut);
-    this.removeTooltip();
+      this.remove();
+
+      this.removeEventListener();
+  }
+
+  remove() {
+      if (this.element) {
+          this.element.remove();
+          this.element = null;
+      }
+  }
+
+  getHTMLFromTemplate(template) {
+      const parentNode = document.createElement('div');
+
+      parentNode.innerHTML = template;
+
+      return parentNode.firstElementChild;
+  }
+
+  getTooltipStyle({ left, top } = {}) {
+      if (!left && !top) return '';
+
+      return `style="left: ${left}; top: ${top};"`;
+  }
+
+  getTooltipTemplate(content = '', options) {
+      const style = this.getTooltipStyle(options);
+
+      return `<div class="tooltip" ${style}>${content}</div>`;
+  }
+
+  initialize() {
+      this.initEventListeners();
+  }
+
+  hideTooltip() {
+      this.element.innerHTML = '';
+  }
+
+  render(content, options) {
+      if (this.element) return;
+
+      this.element = this.getHTMLFromTemplate(this.getTooltipTemplate(content, options));
+
+      document.body.append(this.element);
   }
 }
 

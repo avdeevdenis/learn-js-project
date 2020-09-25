@@ -1,89 +1,204 @@
+const BACKEND_URL = 'https://course-js.javascript.ru';
+
 export default class ColumnChart {
-  element;
-  subElements = {};
-  chartHeight = 50;
+    element;
+    subElements;
 
-  constructor({
-    data = [],
-    label = '',
-    link = '',
-    value = 0
-  } = {}) {
-    this.data = data;
-    this.label = label;
-    this.link = link;
-    this.value = value;
+    chartHeight; // максимальная высота одной полоски из css-property
+    DEFAULT_MAX_HEIGHT = 50; // максимальная высота одной полоски на графике по-умолчанию
 
-    this.render();
-  }
+    totalHeading = 0;
 
-  getColumnBody(data) {
-    const maxValue = Math.max(...data);
+    constructor(props) {
+        this.init(props);
 
-    return data
-    .map(item => {
-      const scale = this.chartHeight / maxValue;
-      const percent = (item / maxValue * 100).toFixed(0);
-
-      return `<div style="--value: ${Math.floor(item * scale)}" data-tooltip="${percent}%"></div>`;
-    })
-    .join('');
-  }
-
-  getLink() {
-    return this.link ? `<a class="column-chart__link" href="${this.link}">View all</a>` : '';
-  }
-
-  get template () {
-    return `
-      <div class="column-chart column-chart_loading" style="--chart-height: ${this.chartHeight}">
-        <div class="column-chart__title">
-          Total ${this.label}
-          ${this.getLink()}
-        </div>
-        <div class="column-chart__container">
-          <div data-element="header" class="column-chart__header">
-            ${this.value}
-          </div>
-          <div data-element="body" class="column-chart__chart">
-            ${this.getColumnBody(this.data)}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  async render() {
-    const element = document.createElement('div');
-
-    element.innerHTML = this.template;
-    this.element = element.firstElementChild;
-
-    if (this.data.length) {
-      this.element.classList.remove(`column-chart_loading`);
+        this.render();
     }
 
-    this.subElements = this.getSubElements(this.element);
+    init({ url, range = {}, label, link, formatHeading, data } = {}) {
+        this.setMaxHeight();
 
-    return this.element;
-  }
+        this.url = url;
+        this.range = range;
+        this.data = this.prepareData(data);
 
-  getSubElements (element) {
-    const elements = element.querySelectorAll('[data-element]');
+        this.label = this.prepareLabel(label);
+        this.link = this.prepareLink(link);
 
-    return [...elements].reduce((accum, subElement) => {
-      accum[subElement.dataset.element] = subElement;
+        this.formatHeading = formatHeading;
+    }
 
-      return accum;
-    }, {});
-  }
+    setMaxHeight() {
+        if (this.chartHeight) {
+            return this.chartHeight;
+        }
 
-  update ({headerData, bodyData}) {
-    this.subElements.header.textContent = headerData;
-    this.subElements.body.innerHTML = this.getColumnBody(bodyData);
-  }
+        const chartsNode = document.querySelector('.dashboard__charts');
+        const chartHeight = chartsNode && window.getComputedStyle(chartsNode)
+            .getPropertyValue('--chart-height');
 
-  destroy() {
-    this.element.remove();
-  }
+        this.chartHeight = chartHeight ?
+            parseInt(chartHeight, 10) : this.DEFAULT_MAX_HEIGHT;
+    }
+
+    prepareData(data) {
+        if (!data || !data.length) return null;
+
+        const maxValue = Math.max(...data);
+        const scale = this.chartHeight / maxValue;
+
+        return data.map(value => this.prepareDataValue(value, scale, maxValue));
+    }
+
+    prepareDataValue(value, scale, maxValue) {
+        const percentValue = (value / maxValue * 100).toFixed(0);
+        const processedValue = Math.floor(value * scale);
+
+        return {
+            percent: percentValue + '%',
+            value: processedValue
+        };
+    }
+
+    prepareLabel(label) {
+        if (!label) return '';
+
+        return 'Total ' + label;
+    }
+
+    prepareLink(link) {
+        if (!link) return null;
+
+        return link;
+    }
+
+    getLink() {
+        if (!this.link) return '';
+
+        return `
+            <a class="column-chart__link" href="${this.link}">View all</a>
+        `;
+    }
+
+    getChartTemplate() {
+        return `
+            <div data-element="chart" class="${this.getChartClass()}">
+                <div class="column-chart__title">
+                    ${this.label}
+                    ${this.getLink()}
+                </div>
+                <div data-element="container" class="column-chart__container">
+                    ${this.getContainerContent()}
+                </div>
+            </div>
+        `;
+    }
+
+    getContainerContent() {
+        const columns = this.getColumns();
+
+        return `
+            <div data-element="header" class="column-chart__header">${this.getHeader()}</div>
+            <div data-element="body" class="column-chart__chart">
+                ${columns}
+            </div>
+        `;
+    }
+
+    getChartClass() {
+        const classNames = ['column-chart'];
+
+        if (!this.data) {
+            classNames.push('column-chart_loading');
+        }
+
+        return classNames.join(' ');
+    }
+
+    getColumns() {
+        if (!this.data) return;
+
+        this.totalHeading = 0;
+
+        return this.data
+            .map(({ value, percent }) => {
+                this.totalHeading += value;
+
+                return `<div style="--value:${value}" data-tooltip=${percent}></div>`;
+            })
+            .join('');
+    }
+
+    getHeader() {
+        if (!this.formatHeading) return this.totalHeading;
+
+        return this.formatHeading(this.totalHeading);
+    }
+
+    getHTMLNodeFromTemplate(template) {
+        const parentNode = document.createElement('div');
+
+        parentNode.innerHTML = template;
+
+        return parentNode.firstElementChild;
+    }
+
+    destroy() {
+        this.remove();
+    }
+
+    remove() {
+        this.element?.remove();
+
+        this.data = null;
+    }
+
+    placeholderHide = () => {
+        this.element.classList.remove('column-chart_loading');
+    }
+
+    placeholderShow = () => {
+        this.element.classList.add('column-chart_loading');
+    }
+
+    createUrl(from, to) {
+        const url = new URL(BACKEND_URL + this.url);
+
+        url.searchParams.append('from', from);
+        url.searchParams.append('to', to);
+
+        return url;
+    }
+
+    update({ headerData: value, bodyData: data }) {
+        this.data = this.prepareData(data);
+        this.value = value;
+
+        // const tooltip = document.querySelector('.tooltip');
+
+        // if (tooltip) {
+        //   tooltip.remove();
+        // }
+
+        this.subElements.body.innerHTML = this.getColumns();
+        this.subElements.header.innerHTML = this.getHeader();
+    }
+
+    getSubElements(element) {
+        const elements = element.querySelectorAll('[data-element]');
+
+        return [...elements].reduce((result, subElement) => {
+            result[subElement.dataset.element] = subElement;
+
+            return result;
+        }, {});
+    }
+
+    render() {
+        const element = this.getHTMLNodeFromTemplate(this.getChartTemplate());
+        const subElements = this.getSubElements(element);
+
+        this.element = element;
+        this.subElements = subElements;
+    }
 }
