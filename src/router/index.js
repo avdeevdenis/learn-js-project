@@ -39,7 +39,7 @@ export default class Router {
       match = strippedPath.match(route.pattern);
 
       if (match) {
-        this.page = await this.changePage(route.path, match);
+        this.page = await this.changePage(route.path, match, route.name);
         break;
       }
     }
@@ -55,12 +55,12 @@ export default class Router {
     }));
   }
 
-  async changePage (path, match) {
+  async changePage (path, match, name) {
     if (this.page && this.page.destroy) {
       this.page.destroy();
     }
 
-    return await renderPage(path, match);
+    return await renderPage(path, match, name);
   }
 
   navigate (path) {
@@ -68,8 +68,8 @@ export default class Router {
     this.route();
   }
 
-  addRoute (pattern, path) {
-    this.routes.push({pattern, path});
+  addRoute (pattern, path, name) {
+    this.routes.push({pattern, path, name});
     return this;
   }
 

@@ -6,12 +6,12 @@ tooltip.initialize();
 const router = Router.instance();
 
 router
-  .addRoute(/^$/, 'dashboard')
-  .addRoute(/^products$/, 'products/list')
-  .addRoute(/^products\/add$/, 'products/edit')
-  .addRoute(/^products\/([\w()-]+)$/, 'products/edit')
-  .addRoute(/^sales$/, 'sales')
-  .addRoute(/^categories$/, 'categories')
+  .addRoute(/^$/, 'dashboard', 'dashboard')
+  .addRoute(/^products$/, 'products/list', 'products')
+  .addRoute(/^products\/add$/, 'products/edit', 'products')
+  .addRoute(/^products\/([\w()-]+)$/, 'products/edit', 'products')
+  .addRoute(/^sales$/, 'sales', 'sales')
+  .addRoute(/^categories$/, 'categories', 'categories')
   .addRoute(/^404\/?$/, 'error404')
   .setNotFoundPagePath('error404')
   .listen();
