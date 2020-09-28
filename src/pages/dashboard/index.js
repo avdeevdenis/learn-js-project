@@ -24,8 +24,14 @@ export default class Page {
   }
 
   async updateTableComponent (from, to) {
-    const data = await fetchJson(`${process.env.BACKEND_URL}api/dashboard/bestsellers?_start=1&_end=20&from=${from.toISOString()}&to=${to.toISOString()}`);
-    this.components.sortableTable.updateData(data);
+    const options = {
+      start: 1,
+      end: 20,
+      from: from.toISOString(),
+      to: to.toISOString()
+    };
+
+    await this.components.sortableTable.update(options);
   }
 
   async updateChartsComponents (from, to) {
@@ -50,7 +56,7 @@ export default class Page {
     });
 
     const sortableTable = new SortableTable(header, {
-      url: `api/dashboard/bestsellers?_start=1&_end=20&from=${from.toISOString()}&to=${to.toISOString()}`,
+      url: `api/dashboard/bestsellers?_start=1&_sort=title&_end=20&from=${from.toISOString()}&to=${to.toISOString()}`,
       isSortLocally: true
     });
 
@@ -96,9 +102,7 @@ export default class Page {
 
       <h3 class="block-title">Best sellers</h3>
 
-      <div data-element="sortableTable">
-        <!-- sortable-table component -->
-      </div>
+      <div data-element="sortableTable"></div>
     </div>`;
   }
 
