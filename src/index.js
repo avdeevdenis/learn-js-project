@@ -1,11 +1,13 @@
-import Router from './router/index.js';
-import tooltip from './components/tooltip/index.js';
-import sidebar from './utils/sidebar.js';
+import Router from './router/index';
+import tooltip from './components/tooltip/index';
+import sidebar from './utils/sidebar';
 
 tooltip.initialize();
 sidebar.initialize();
 
 const router = Router.instance();
+
+console.log('router', router);
 
 router
   .addRoute(/^$/, 'dashboard', 'dashboard')

@@ -1,4 +1,4 @@
-import renderPage from './render-page.js';
+import renderPage from './render-page';
 
 // performs routing on all links
 export default class Router {
@@ -8,7 +8,7 @@ export default class Router {
     this.initEventListeners();
   }
 
-  initEventListeners () {
+  initEventListeners() {
     document.addEventListener('click', (event) => {
       const link = event.target.closest('a');
       if (!link) return;
@@ -23,20 +23,20 @@ export default class Router {
   }
 
   static instance() {
-    if (!this._instance) {
-      this._instance = new Router();
+    if (!this.selfInstance) {
+      this.selfInstance = new Router();
     }
-    return this._instance;
+    return this.selfInstance;
   }
 
   async route() {
-    let strippedPath = decodeURI(window.location.pathname)
+    const strippedPath = decodeURI(window.location.pathname)
       .replace(/^\/|\/$/, '');
 
     let match;
     let pageName = '';
 
-    for (let route of this.routes) {
+    for (const route of this.routes) {
       match = strippedPath.match(route.pattern);
 
       if (match) {
@@ -53,12 +53,12 @@ export default class Router {
     document.dispatchEvent(new CustomEvent('route', {
       detail: {
         page: this.page,
-        pageName
-      }
+        pageName,
+      },
     }));
   }
 
-  async changePage (path, match) {
+  async changePage(path, match) {
     if (this.page && this.page.destroy) {
       this.page.destroy();
     }
@@ -66,22 +66,22 @@ export default class Router {
     return await renderPage(path, match);
   }
 
-  navigate (path) {
+  navigate(path) {
     history.pushState(null, null, path);
     this.route();
   }
 
-  addRoute (pattern, path, name) {
-    this.routes.push({pattern, path, name});
+  addRoute(pattern, path, name) {
+    this.routes.push({ pattern, path, name });
     return this;
   }
 
-  setNotFoundPagePath (path) {
+  setNotFoundPagePath(path) {
     this.notFoundPagePath = path;
     return this;
   }
 
-  listen () {
+  listen() {
     window.addEventListener('popstate', () => this.route());
     this.route();
   }

@@ -1,4 +1,4 @@
-export default async function(path, match) {
+export default async function (path, match) {
   const main = document.querySelector('main');
 
   main.classList.add('is-loading');
