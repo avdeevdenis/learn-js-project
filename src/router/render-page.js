@@ -1,21 +1,7 @@
-const setActiveSidebar = (name) => {
-  const list = [...document.querySelectorAll('[data-page]')];
-  
-  list.forEach(item => {
-    if (item.dataset.page.toLocaleLowerCase() === name) {
-      item.parentNode.classList.add('active');
-    } else {
-      item.parentNode.classList.remove('active');
-    }
-  });
-};
-
-export default async function(path, match, name) {
+export default async function(path, match) {
   const main = document.querySelector('main');
 
   main.classList.add('is-loading');
-
-  setActiveSidebar(name);
 
   const options = match && match[1];
 

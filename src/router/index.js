@@ -34,12 +34,14 @@ export default class Router {
       .replace(/^\/|\/$/, '');
 
     let match;
+    let pageName = '';
 
     for (let route of this.routes) {
       match = strippedPath.match(route.pattern);
 
       if (match) {
-        this.page = await this.changePage(route.path, match, route.name);
+        this.page = await this.changePage(route.path, match);
+        pageName = route.name;
         break;
       }
     }
@@ -50,17 +52,18 @@ export default class Router {
 
     document.dispatchEvent(new CustomEvent('route', {
       detail: {
-        page: this.page
+        page: this.page,
+        pageName
       }
     }));
   }
 
-  async changePage (path, match, name) {
+  async changePage (path, match) {
     if (this.page && this.page.destroy) {
       this.page.destroy();
     }
 
-    return await renderPage(path, match, name);
+    return await renderPage(path, match);
   }
 
   navigate (path) {
